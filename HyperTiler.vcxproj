@@ -150,29 +150,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="DatasetCache.cpp" />
-    <ClCompile Include="HyperTiler.cpp" />
-    <ClCompile Include="ImageUtils.cpp" />
-    <ClCompile Include="jsonUtils.cpp" />
-    <ClCompile Include="TileConversion.cpp" />
-    <ClCompile Include="TileUtils.cpp" />
-    <ClCompile Include="Util.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Config.hpp" />
-    <ClInclude Include="DatasetCache.hpp" />
-    <ClInclude Include="httplib.hpp" />
-    <ClInclude Include="ImageUtils.hpp" />
-    <ClInclude Include="jsonUtils.hpp" />
-    <ClInclude Include="TileConversion.hpp" />
-    <ClInclude Include="TileUtils.hpp" />
-    <ClInclude Include="Util.hpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <None Include="WebTerminal\svelte-app\src\App.svelte" />
     <None Include="WebTerminal\svelte-app\src\main.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Config.hpp" />
+    <ClInclude Include="src\DatasetCache.hpp" />
+    <ClInclude Include="src\httplib.hpp" />
+    <ClInclude Include="src\ImageUtils.hpp" />
+    <ClInclude Include="src\jsonUtils.hpp" />
+    <ClInclude Include="src\TileConversion.hpp" />
+    <ClInclude Include="src\TileUtils.hpp" />
+    <ClInclude Include="src\Util.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\DatasetCache.cpp" />
+    <ClCompile Include="src\HyperTiler.cpp" />
+    <ClCompile Include="src\ImageUtils.cpp" />
+    <ClCompile Include="src\jsonUtils.cpp" />
+    <ClCompile Include="src\TileConversion.cpp" />
+    <ClCompile Include="src\TileUtils.cpp" />
+    <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
