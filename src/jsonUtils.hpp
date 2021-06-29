@@ -34,7 +34,7 @@ namespace HyperTiler {
 		//inline json Save(T const& val) {
 		//	return val.Save();
 		//}
-
+		
 		template<typename T>
 		inline json Save(T const& val) {
 			return json(val);
@@ -66,6 +66,18 @@ namespace HyperTiler {
 				res[i] = Save(val[i]);
 			}
 			return res;
+		}
+
+		inline json Save(glm::ivec3 const& val) {
+			return Save<3, int>(val);
+		}
+
+		inline json Save(glm::ivec2 const& val) {
+			return Save<2, int>(val);
+		}
+
+		inline json Save(glm::dvec2 const& val) {
+			return Save<2, double>(val);
 		}
 
 		template<typename T>
