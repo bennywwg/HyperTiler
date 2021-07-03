@@ -37,6 +37,11 @@ namespace HyperTiler {
         return orig;
     }
 
+    bool TileExists(URI const& format, ivec3 coord) {
+        string const& ResourceName = FormatTileString(format, coord);
+        return format.IsFilesystemResource() ? FileExists(ResourceName) : CheckUrlExistence(ResourceName);
+    }
+
     ImageSamples::SampleException::SampleException()
     : std::runtime_error("Sample overflow, output will be clipped")
     { }

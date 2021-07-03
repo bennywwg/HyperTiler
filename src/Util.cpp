@@ -255,13 +255,41 @@ namespace HyperTiler {
             free(chunk.memory);
 
             return mres;
-        }
-        else {
+        } else {
             curl_easy_cleanup(curl_handle);
 
             free(chunk.memory);
 
             return { };
         }
+    }
+
+    bool CheckUrlExistence(string const& path) {
+        CURL* curl_handle;
+        CURLcode res;
+
+        curl_global_init(CURL_GLOBAL_ALL);
+
+        curl_handle = curl_easy_init();
+
+        curl_easy_setopt(curl_handle, CURLOPT_URL, path.c_str());
+        curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1L);
+        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+        curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, true);
+
+        res = curl_easy_perform(curl_handle);
+
+        long http_code = 0;
+        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+
+        if (res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
+        }
+
+        curl_easy_cleanup(curl_handle);
+
+        return http_code >= 200 && http_code < 300;
     }
 }

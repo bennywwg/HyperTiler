@@ -51,6 +51,13 @@ namespace HyperTiler {
 
     using glm::dot;
 
+    struct URI : public string {
+        bool IsFilesystemResource() const { return !IsNetworkResource(); }
+        bool IsNetworkResource() const { return std::regex_search(*this, std::regex(R"(^https?\:\/\/)")); }
+        URI() = default;
+        URI(string const& other) : string(other) { }
+    };
+
     // iterable int bounds
     template<typename T>
     class DiscreteAABB2 {
@@ -128,6 +135,7 @@ namespace HyperTiler {
     // io
     vector<uint8_t> ReadEntireFileBinary(path const& path);
     vector<uint8_t> ReadEntireUrlBinary(string const& path);
+    bool            CheckUrlExistence(string const& path);
 
     string ReadEntireFileText(path const& path);
     string ReadEntireUrlText(string const& path);

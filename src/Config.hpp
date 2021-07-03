@@ -5,13 +5,6 @@
 #include "Util.hpp"
 
 namespace HyperTiler {
-    struct URI : public string {
-        bool IsFilesystemResource() const { return !IsNetworkResource(); }
-        bool IsNetworkResource() const { return std::regex_search(*this, std::regex(R"(^https?\:\/\/)")); }
-        URI() = default;
-        URI(string const& other) : string(other) { }
-    };
-
     enum class FormatEncoding : int {
         Raw = 0,
         PNG = 1
