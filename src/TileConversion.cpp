@@ -8,8 +8,6 @@
 #include "jsonUtils.hpp"
 #include "Config.hpp"
 
-#pragma optimize("", off)
-
 namespace HyperTiler {
     typedef std::function<uint8_t const* (ivec2 const&)> LoadFunc;
     typedef std::function<void(ivec3 const&, uint8_t*)> StoreFunc;

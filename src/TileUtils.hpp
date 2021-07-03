@@ -10,6 +10,9 @@ namespace HyperTiler {
     string FormatTileStringInt(string const& format, int value);
     string FormatTileString(string format, ivec3 coord);
 
+    // SLOW!
+    bool TileExists(URI const& format, ivec3 coord);
+
     class ImageSamples {
         vector<uint64_t> m_data;
         vector<int> m_numSamples;

@@ -147,6 +147,8 @@ void HandleWebRequests() {
             beginMicros = parsed["beginMicros"].get<uint64_t>();
         } catch (json::exception) {
             std::cout << "malformed status request\n";
+            res.status = 400;
+            return;
         }
 
         json::array_t ar;
@@ -164,6 +166,30 @@ void HandleWebRequests() {
             {"logs", ar}
         }.dump(), "application/json");
     });
+
+    svr.Post("/exists", [](const httplib::Request& req, httplib::Response& res) {
+        json parsed;
+        string formatStr;
+        ivec3 coord;
+        try {
+            parsed = json::parse(req.body);
+        } catch (json::exception) {
+            std::cout << "malformed exists request\n";
+            res.status = 400;
+            return;
+        }
+
+        js::ErrorStack er;
+        js::LoadNamed(parsed, er, 0, "formatStr", formatStr);
+        js::LoadNamed(parsed, er, 0, "coord", coord);
+
+        if (!er.empty()) {
+            res.status = 400;
+            return;
+        }
+
+        res.set_content(json(TileExists(formatStr, coord)).dump(), "application/json");
+    });
     
     path const resourceDir = path(INSTALL_DIR) / path("front/public");
 
@@ -179,7 +205,6 @@ void HandleWebRequests() {
 
 int main(int /*argc*/, char** /*argv*/) {
     string str = ((json)ImageEncoding()).dump();
-
 
     ProgramStart = std::chrono::system_clock::now();
 
@@ -200,7 +225,7 @@ int main(int /*argc*/, char** /*argv*/) {
     //conf.SpatialConfig.EndOutputLevel = 4;
     //conf.SpatialConfig.InputTileSize = ivec2(1201, 1201);
     //conf.SpatialConfig.OutputTileSize = ivec2(512, 512);
-    ////conf.SpatialConfig.OutputPixelRange = DiscreteAABB2<int>(0, 0, 216180 * 2, 216180);
+    //conf.SpatialConfig.OutputPixelRange = DiscreteAABB2<int>(0, 0, 216180 * 2, 216180);
     //conf.SpatialConfig.OutputPixelRange = DiscreteAABB2<int>(0, 0, 1201 * 4, 1201 * 4) + (ivec2(0, 90) * 1201 + ivec2(12010));
     //
     //Convert(conf, AddLogItem);
