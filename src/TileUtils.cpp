@@ -48,7 +48,6 @@ namespace HyperTiler {
 
     // Replace cells with no samples with a default value
     template<typename T>
-    requires std::integral<T>
     void ImageSamples::GenerateData(T* data, T const& defaultValue) const {
         for (int i = 0; i < m_data.size(); ++i) {
             if (m_numSamples[i] == 0) {
@@ -66,7 +65,6 @@ namespace HyperTiler {
     template void ImageSamples::GenerateData<uint64_t>(uint64_t*, uint64_t const&) const;
 
     template<typename T>
-    requires std::integral<T>
     void ImageSamples::AddSample(ivec2 const& coord, T const& val) {
         ++m_numSamples[coord.y * m_dimension.x + coord.x];
         uint64_t& loc = m_data[coord.y * m_dimension.x + coord.x];

@@ -1,7 +1,7 @@
 <script>
   import Config from "./Config.svelte";
   import Viewer from "./Viewer.svelte";
-  import CheckTileExistence from "./Tiler"
+  import CheckTileExistence from "./Tiler.ts"
   import { beforeUpdate, afterUpdate, onMount } from "svelte";
 
   let config = {};

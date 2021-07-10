@@ -191,7 +191,7 @@ void HandleWebRequests() {
         res.set_content(json(TileExists(formatStr, coord)).dump(), "application/json");
     });
     
-    path const resourceDir = path(INSTALL_DIR) / path("front/public");
+    path const resourceDir = path(FRONT_DIR);
 
     std::cout << "Starting from resource directory " << resourceDir << "\n";
 

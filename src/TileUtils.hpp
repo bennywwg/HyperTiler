@@ -2,8 +2,6 @@
 
 #include "Util.hpp"
 
-#include <concepts>
-
 namespace HyperTiler {
     string IntToStringPadZeros(int value, int zeros);
 
@@ -24,11 +22,9 @@ namespace HyperTiler {
         { SampleException(); };
 
         template<typename T>
-        requires std::integral<T>
         void GenerateData(T* data, T const& defaultValue) const;
 
         template<typename T>
-        requires std::integral<T>
         void AddSample(ivec2 const& coord, T const& val);
 
         uint64_t GetTotalSamples() const;
