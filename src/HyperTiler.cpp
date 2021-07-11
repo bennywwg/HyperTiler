@@ -27,7 +27,6 @@ std::mutex Mut;
 vector<Log> Logs;
 
 #ifdef _WIN32
-HANDLE g_hTerminateEvent;
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
     bool shouldShutdown = false;
 
@@ -69,17 +68,29 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
         std::cout << "Cleaning up ...\n";
         Running = false;
         ContinueProgram = false;
-        ::SetEvent(g_hTerminateEvent);
     }
 
     return shouldShutdown;
+}
+#else
+void my_handler(int s) {
+    std::cout << "Halting from Ctrl+C\n";
+    Running = false;
+    ContinueProgram = false;
 }
 #endif
 
 void SetupSignalHandler() {
 #ifdef _WIN32
-    g_hTerminateEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
     ::SetConsoleCtrlHandler(CtrlHandler, TRUE);
+#else
+   struct sigaction sigIntHandler;
+
+   sigIntHandler.sa_handler = my_handler;
+   sigemptyset(&sigIntHandler.sa_mask);
+   sigIntHandler.sa_flags = 0;
+
+   sigaction(SIGINT, &sigIntHandler, NULL);
 #endif
 }
 
@@ -212,28 +223,10 @@ int main(int /*argc*/, char** /*argv*/) {
 
     std::thread webThread(HandleWebRequests);
 
-    //Config conf;
-    //conf.DatasetConfig.InputURIFormat = string("https://spkit.org/datasets/remapped/{x3}_{y3}_{z3}.hgt");
-    ////conf.DatasetConfig.InputURIFormat = string("http://192.168.1.52:4432//datasets/remapped/{x3}_{y3}_{z3}.hgt");
-    //conf.DatasetConfig.InputEncoding.SwapEndian = true;
-    //
-    //conf.DatasetConfig.OutputURIFormat = string("./{x3}_{y3}_{z3}.png");
-    //conf.DatasetConfig.OutputEncoding.Encoding = FormatEncoding::PNG;
-    //conf.DatasetConfig.OutputEncoding.SwapEndian = false;
-    //
-    //conf.SpatialConfig.BeginOutputLevel = 3;
-    //conf.SpatialConfig.EndOutputLevel = 4;
-    //conf.SpatialConfig.InputTileSize = ivec2(1201, 1201);
-    //conf.SpatialConfig.OutputTileSize = ivec2(512, 512);
-    //conf.SpatialConfig.OutputPixelRange = DiscreteAABB2<int>(0, 0, 216180 * 2, 216180);
-    //conf.SpatialConfig.OutputPixelRange = DiscreteAABB2<int>(0, 0, 1201 * 4, 1201 * 4) + (ivec2(0, 90) * 1201 + ivec2(12010));
-    //
-    //Convert(conf, AddLogItem);
-
     // Wait for a request to stop the program
-#ifdef _WIN32
-    ::WaitForSingleObject(g_hTerminateEvent, INFINITE);
-#endif
+    while (ContinueProgram) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
     svr.stop();
     webThread.join();
