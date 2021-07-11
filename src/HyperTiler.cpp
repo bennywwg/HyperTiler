@@ -5,7 +5,7 @@
 #include "jsonUtils.hpp"
 #include "Config.hpp"
 
-#include "httplib.hpp"
+#include "WebHighLevel.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -110,98 +110,76 @@ vector<Log> GetLogs(std::chrono::system_clock::time_point beginTime, std::chrono
 }
 
 void HandleWebRequests() {
-    svr.Post("/process", [](const httplib::Request& req, httplib::Response& res) {
-        if (Running) {
-            res.set_content("Already Running", "text/plain");
-            return;
-        }
-
-        try {
-            json parsed = json::parse(req.body);
-            Config conf = parsed;
-
-            {
-                if (Running) {
-                    std::cout << "Already processing, ignoring request\n";
-                    return;
-                }
-
-                CurrentConfig = conf;
+    AddJsonPost<Config>(svr, "/process",
+        [](json const& j, js::ErrorStack& er, Config& state) {
+            try {
+                state = j;
+            } catch(js::ErrorStack const& ex) {
+                er = ex;
+            }
+        },
+        [](Config const& state) -> json {
+            if (Running) {
+                return json("Already Running");
+            } else {
+                CurrentConfig = state;
                 Running = true;
-                htAssert(!ConversionThread.joinable());
                 ConversionThread = std::thread([] {
                     Convert(CurrentConfig, AddLogItem, Running);
                 });
+                return json("Begun");
             }
-        } catch (json::exception const& ex) {
-            std::cout << ex.what() << "\n";
-        } catch (js::ErrorStack const& ex) {
-            std::cout << ex.what() << "\n";
         }
-    });
+    );
     
-    svr.Post("/cancel", [](const httplib::Request& req, httplib::Response& res) {
-        {
-            if (Running) return;
+    AddEmptyPost(svr, "/cancel", [](){
+        if (Running) return;
 
-            Running = false;
-            htAssert(ConversionThread.joinable());
-            ConversionThread.join();
-        }
-    });
-    
-    svr.Post("/status", [](const httplib::Request& req, httplib::Response& res) {
-        uint64_t beginMicros = 0;
-        try {
-            json parsed = json::parse(req.body);
-
-            beginMicros = parsed["beginMicros"].get<uint64_t>();
-        } catch (json::exception) {
-            std::cout << "malformed status request\n";
-            res.status = 400;
-            return;
-        }
-
-        json::array_t ar;
-        std::chrono::system_clock::time_point lockTIme;
-        vector<Log> logs = GetLogs(ProgramStart + std::chrono::microseconds(beginMicros), lockTIme);
-        for (auto &l : logs) {
-            ar.push_back({
-                {"time", std::chrono::duration_cast<std::chrono::microseconds>(l.time - ProgramStart).count()},
-                {"content", l.item->content()}
-            });
-        }
-
-        res.set_content(json{
-            {"time", std::chrono::duration_cast<std::chrono::microseconds>(lockTIme - ProgramStart).count()},
-            {"logs", ar}
-        }.dump(), "application/json");
+        Running = false;
+        htAssert(ConversionThread.joinable());
+        ConversionThread.join();
     });
 
-    svr.Post("/exists", [](const httplib::Request& req, httplib::Response& res) {
-        json parsed;
-        string formatStr;
-        ivec3 coord;
-        try {
-            parsed = json::parse(req.body);
-        } catch (json::exception) {
-            std::cout << "malformed exists request\n";
-            res.status = 400;
-            return;
+    AddJsonPost<uint64_t>(svr, "/status",
+        [](json const& j, js::ErrorStack& er, uint64_t& state) { // Parse json input
+            js::LoadNamed(j, er, 0, "beginMicros", state);
+        },
+        [](uint64_t const& state) -> json { // After parsing
+            json::array_t ar;
+            std::chrono::system_clock::time_point lockTIme;
+            vector<Log> logs = GetLogs(ProgramStart + std::chrono::microseconds(state), lockTIme);
+
+            for (auto &l : logs) {
+                ar.push_back({
+                    {"time", std::chrono::duration_cast<std::chrono::microseconds>(l.time - ProgramStart).count()},
+                    {"content", l.item->content()}
+                });
+            }
+
+            return json {
+                {"time", std::chrono::duration_cast<std::chrono::microseconds>(lockTIme - ProgramStart).count()},
+                {"logs", ar}
+            };
         }
+    );
 
-        js::ErrorStack er;
-        js::LoadNamed(parsed, er, 0, "formatStr", formatStr);
-        js::LoadNamed(parsed, er, 0, "coord", coord);
+    {
+        struct CheckExistenceStruct {
+            string formatStr;
+            ivec3 coord;
+        };
+        
+        AddJsonPost<CheckExistenceStruct>(svr, "/exists",
+            [](json const& j, js::ErrorStack& er, CheckExistenceStruct& state) {
+                js::LoadNamed(j, er, 0, "formatStr", state.formatStr);
+                js::LoadNamed(j, er, 0, "coord", state.coord);
+            },
+            [](CheckExistenceStruct const& state) -> json {
+                return TileExists(state.formatStr, state.coord);
+            }
+        );
+    }
 
-        if (!er.empty()) {
-            res.status = 400;
-            return;
-        }
-
-        res.set_content(json(TileExists(formatStr, coord)).dump(), "application/json");
-    });
-    
     path const resourceDir = path(FRONT_DIR);
 
     std::cout << "Starting from resource directory " << resourceDir << "\n";
