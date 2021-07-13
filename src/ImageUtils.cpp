@@ -19,28 +19,28 @@ namespace HyperTiler {
         status.currentPos += byteCountToRead;
     }
 
-    PngResult ReadPng(vector<uint8_t> const& data, bool expand) {
-        if (data.size() < 8) return PngResult();
+    ImageData ReadPng(vector<uint8_t> const& data, bool expand) {
+        if (data.size() < 8) return ImageData();
 
         if (png_sig_cmp(data.data(), 0, 8)) {
-            return PngResult();
+            return ImageData();
         }
 
         png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
         if (!png_ptr) {
-            return PngResult();
+            return ImageData();
         }
 
         png_infop info_ptr = png_create_info_struct(png_ptr);
         if (!info_ptr) {
             png_destroy_read_struct(&png_ptr, NULL, NULL);
-            return PngResult();
+            return ImageData();
         }
 
         if (setjmp(png_jmpbuf(png_ptr))) {
             png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-            return PngResult();
+            return ImageData();
         }
 
         pngMemoryReader memoryReader{ data.data(), 8 };
@@ -54,7 +54,7 @@ namespace HyperTiler {
             //png_set_palette_to_rgb(png_ptr);
         }
 
-        PngResult res;
+        ImageData res;
 
         png_set_interlace_handling(png_ptr);
         if (expand) png_set_expand(png_ptr);
@@ -67,7 +67,7 @@ namespace HyperTiler {
 
         if (res.bitDepth == 0) {
             png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-            return PngResult();
+            return ImageData();
         }
 
         htAssert(res.bitDepth == 8 || res.bitDepth == 16);
@@ -75,7 +75,7 @@ namespace HyperTiler {
         // set error handler with... jumps? yikes.
         if (setjmp(png_jmpbuf(png_ptr))) {
             png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-            return PngResult();
+            return ImageData();
         }
 
         res.data.resize(res.width * res.height * res.numChannels * res.bitDepth / 8);
@@ -117,5 +117,25 @@ namespace HyperTiler {
         outputData.resize(size);
 
         return png_image_write_to_memory(&img, outputData.data(), &size, 0, inputData, 0, nullptr);
+    }
+
+    bool WritePng(vector<uint8_t>& outputData, ImageData const& img) {
+        png_image pimg;
+        memset(&pimg, 0, sizeof(pimg));
+        pimg.version = PNG_IMAGE_VERSION;
+        pimg.format = PNG_FORMAT_RGB;
+        pimg.width = img.width;
+        pimg.height = img.height;
+
+        png_alloc_size_t size = img.width * img.height * (img.bitDepth / 8) * img.numChannels;
+        htAssert(size == img.data.size());
+
+        if (!png_image_write_to_memory(&pimg, nullptr, &size, 0, img.data.data(), 0, nullptr)) {
+            return false;
+        }
+
+        outputData.resize(size);
+
+        return png_image_write_to_memory(&pimg, outputData.data(), &size, 0, img.data.data(), 0, nullptr);
     }
 }

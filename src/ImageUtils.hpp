@@ -1,9 +1,9 @@
 #pragma once
 
-#include "TileUtils.hpp"
+#include "Util.hpp"
 
 namespace HyperTiler {
-    struct PngResult {
+    struct ImageData {
         // will be 3, or 4
         int numChannels = -1;
 
@@ -16,7 +16,9 @@ namespace HyperTiler {
         vector<uint8_t> data;
     };
 
-    PngResult ReadPng(vector<uint8_t> const& data, bool expand);
+    ImageData ReadPng(vector<uint8_t> const& data, bool expand);
 
     bool WritePng(vector<uint8_t>& outputData, uint8_t* inputData, int width, int height, bool swapEndian);
+
+    bool WritePng(vector<uint8_t>& outputData, ImageData const& img);
 }

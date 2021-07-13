@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Util.hpp"
+#include "Config.hpp"
+#include "ImageUtils.hpp"
 
 namespace HyperTiler {
     string IntToStringPadZeros(int value, int zeros);
@@ -10,6 +12,7 @@ namespace HyperTiler {
 
     // SLOW!
     bool TileExists(URI const& format, ivec3 coord);
+    ImageData LoadTileData(DatasetConfig const& Conf, ivec3 coord);
 
     class ImageSamples {
         vector<uint64_t> m_data;

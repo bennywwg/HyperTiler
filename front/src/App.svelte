@@ -1,7 +1,7 @@
 <script>
   import Config from "./Config.svelte";
   import Viewer from "./Viewer.svelte";
-  import CheckTileExistence from "./Tiler.ts"
+  //import CheckTileExistence from "./Tiler.ts"
   import { beforeUpdate, afterUpdate, onMount } from "svelte";
 
   let config = {};
@@ -414,7 +414,7 @@
     });
   });
 
-  setInterval(() => generationState.queryNewLogs(), 250);
+  //setInterval(() => generationState.queryNewLogs(), 250);
 </script>
 
 <main>

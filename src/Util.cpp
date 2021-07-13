@@ -144,6 +144,41 @@ namespace HyperTiler {
     ivec2 CeilOnInterval(ivec2 val, ivec2 mod) {
         return FloorOnInterval(val, mod) + mod;
     }
+    vec3 ColorMap(float scalar) {
+        // From "Why we use bad color maps and what you can do about it" (Kenneth Moreland)
+        // Page 5, Figure 8
+        vec3 colors[] = {
+            vec3(  0.0f,   0.0f,   0.0f) / 255.0f,
+            vec3(  0.0f,  24.0f, 168.0f) / 255.0f,
+            vec3( 99.0f,   0.0f, 228.0f) / 255.0f,
+            vec3(220.0f,  20.0f,  60.0f) / 255.0f,
+            vec3(255.0f, 117.0f,  56.0f) / 255.0f,
+            vec3(238.0f, 210.0f,  20.0f) / 255.0f,
+            vec3(255.0f, 255.0f, 255.0f) / 255.0f
+        };
+        float positions[] = {
+            0.0f,
+            0.22f,
+            0.35f,
+            0.47f,
+            0.65f,
+            0.84f,
+            1.0f
+        };
+        constexpr int numColor = sizeof(colors) / sizeof(vec3);
+        static_assert(numColor == sizeof(positions) / sizeof(float), "ColorMap array size mismatch");
+        if (scalar < 0.0f) return colors[0];
+        if (scalar > 1.0f) return colors[numColor - 1];
+        for(int i = 0; i < numColor - 1; ++i) {
+            if (scalar >= positions[i] && scalar < positions[i + 1]) {
+                return glm::mix(colors[i], colors[i + 1], (scalar - positions[i]) / (positions[i + 1] - positions[i]));
+            }
+        }
+        return colors[numColor - 1];
+    }
+    uvec3 ToRGBU8(vec3 const& color) {
+        return glm::clamp(uvec3(color * 255.0f), uvec3(0), uvec3(255));
+    }
 
     vector<uint8_t> ReadEntireFileBinary(path const& path) {
         std::ifstream f(path, std::ios::binary | std::ios::ate);

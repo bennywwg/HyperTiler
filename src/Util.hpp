@@ -132,6 +132,10 @@ namespace HyperTiler {
     int CeilOnInterval(int val, int mod);
     ivec2 CeilOnInterval(ivec2 val, ivec2 mod);
 
+    // Color
+    vec3 ColorMap(float scalar);
+    uvec3 ToRGBU8(vec3 const& color);
+
     // io
     vector<uint8_t> ReadEntireFileBinary(path const& path);
     vector<uint8_t> ReadEntireUrlBinary(string const& path);

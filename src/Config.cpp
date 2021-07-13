@@ -1,5 +1,4 @@
 #include "Config.hpp"
-
 #include "jsonUtils.hpp"
 
 namespace HyperTiler {
@@ -44,6 +43,28 @@ namespace HyperTiler {
         js::ParseContext ctx = j;
         ctx.Destore(DatasetConfig);
         ctx.Destore(SpatialConfig);
+        if (!ctx.er.empty()) throw ctx.er;
+    }
+    DatasetConfig::operator json() const {
+        js::SaveContex ctx;
+        ctx.Store(Channels);
+        ctx.Store(Format);
+        ctx.Store(Size);
+        ctx.Store(Encoding);
+        return ctx;
+    }
+    DatasetConfig::DatasetConfig()
+    : Channels(1)
+    , Format()
+    , Size()
+    , Encoding()
+    { }
+    DatasetConfig::DatasetConfig(json const& j) {
+        js::ParseContext ctx = j;
+        ctx.Destore(Channels);
+        ctx.Destore(Format);
+        ctx.Destore(Size);
+        ctx.Destore(Encoding);
         if (!ctx.er.empty()) throw ctx.er;
     }
     ConversionDatasetConfig::operator json() const {

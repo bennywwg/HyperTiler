@@ -1,7 +1,5 @@
 #pragma once
 
-#include "TileUtils.hpp"
-
 #include "Util.hpp"
 
 namespace HyperTiler {
@@ -21,6 +19,17 @@ namespace HyperTiler {
         operator json() const;
         ImageEncoding() = default;
         ImageEncoding(json const& j);
+    };
+
+    struct DatasetConfig {
+        URI Format;
+        int Channels;
+        ivec2 Size;
+        ImageEncoding Encoding;
+
+        operator json() const;
+        DatasetConfig();
+        DatasetConfig(json const& j);
     };
 
     struct ConversionDatasetConfig {

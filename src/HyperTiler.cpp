@@ -13,6 +13,11 @@
 #include <signal.h>
 #endif
 
+#ifndef FRONT_DIR
+#define FRONT_DIR "./"
+#pragma message("FRONT_DIR not defined, defaulting to \"./\"")
+#endif
+
 #pragma optimize("", off)
 
 using namespace HyperTiler;
@@ -20,8 +25,8 @@ using namespace HyperTiler;
 httplib::Server svr;
 std::chrono::system_clock::time_point ProgramStart;
 Config CurrentConfig;
-std::atomic_bool Running = false;
-std::atomic_bool ContinueProgram = true;
+std::atomic_bool Running;
+std::atomic_bool ContinueProgram;
 std::thread ConversionThread;
 std::mutex Mut;
 vector<Log> Logs;
@@ -88,7 +93,7 @@ void SetupSignalHandler() {
 
    sigIntHandler.sa_handler = my_handler;
    sigemptyset(&sigIntHandler.sa_mask);
-   sigIntHandler.sa_flags = 0;
+   sigIntHandler.sa_flags = SA_RESETHAND;
 
    sigaction(SIGINT, &sigIntHandler, NULL);
 #endif
@@ -180,6 +185,58 @@ void HandleWebRequests() {
         );
     }
 
+    {
+        struct GenPreviewStruct {
+            DatasetConfig Conf;
+            ivec3 coord;
+            float minVal;
+            float maxVal;
+        };
+        
+        AddDataPost<GenPreviewStruct>(svr, "/api/preview", "image/png",
+            [](json const& j, js::ErrorStack& er, GenPreviewStruct& state) {
+                js::LoadNamed(j, er, 0, "Conf", state.Conf);
+                js::LoadNamed(j, er, 0, "coord", state.coord);
+                js::LoadNamed(j, er, 0, "minVal", state.minVal);
+                js::LoadNamed(j, er, 0, "maxVal", state.maxVal);
+            },
+            [](GenPreviewStruct const& state) -> vector<uint8_t> {
+                ImageData data = LoadTileData(state.Conf, state.coord);
+
+                if (data.numChannels != 1 || data.bitDepth != 16) return { };
+
+                // Generate an 8 bit 3 channel PNG with scalar colors
+                vector<uint8_t> res;
+                res.resize(data.width * data.height * 3);
+                for (int y = 0; y < data.height; ++y) {
+                    for (int x = 0; x < data.width; ++x) {
+                        const size_t flatIndex = y * data.width + x;
+                        uint16_t val = *reinterpret_cast<uint16_t*>(&data.data[flatIndex * (data.bitDepth / 8) * data.numChannels]);
+                        
+                        float scalar = (val - state.minVal) / (state.maxVal - state.minVal);
+
+                        uvec3 colorized = ToRGBU8(ColorMap(scalar));
+
+                        res[flatIndex * 3 + 0] = static_cast<uint8_t>(colorized.x);
+                        res[flatIndex * 3 + 1] = static_cast<uint8_t>(colorized.y);
+                        res[flatIndex * 3 + 2] = static_cast<uint8_t>(colorized.z);
+                    }
+                }
+
+                data.data = res;
+                data.bitDepth = 8;
+                data.numChannels = 3;
+
+                vector<uint8_t> pres;
+                if(WritePng(pres, data)) {
+                    return pres;
+                } else {
+                    return { };
+                }
+            }
+        );
+    }
+
     path const resourceDir = path(FRONT_DIR);
 
     std::cout << "Starting from resource directory " << resourceDir << "\n";
@@ -193,7 +250,9 @@ void HandleWebRequests() {
 }
 
 int main(int /*argc*/, char** /*argv*/) {
-    string str = ((json)ImageEncoding()).dump();
+    string str = ((json)DatasetConfig()).dump();
+
+    std::cout << str << "\n";
 
     ProgramStart = std::chrono::system_clock::now();
 

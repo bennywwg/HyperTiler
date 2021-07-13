@@ -1,5 +1,6 @@
 #include "TileUtils.hpp"
 #include "jsonUtils.hpp"
+#include <iostream>
 
 #define HT_CHECK_SAMPLE_OVERFLOW
 
@@ -41,6 +42,41 @@ namespace HyperTiler {
         string const& ResourceName = FormatTileString(format, coord);
         return format.IsFilesystemResource() ? FileExists(ResourceName) : CheckUrlExistence(ResourceName);
     }
+    ImageData LoadTileData(DatasetConfig const& Conf, ivec3 coord) {
+            // Get the name of this resource... could be made a lot faster but I doubt this line will be the bottleneck
+            const string Name = FormatTileString(Conf.Format, coord);
+            
+            // Early return if its a file and the specified file doesn't exist
+            if (Conf.Format.IsFilesystemResource() && !FileExists(Name)) return ImageData();
+
+            vector<uint8_t> RawData = Conf.Format.IsFilesystemResource() ? ReadEntireFileBinary(Name) : ReadEntireUrlBinary(Name);
+
+            if (RawData.empty()) return ImageData();
+
+            ImageData res;
+            if (Conf.Encoding.Encoding == FormatEncoding::PNG) {
+                res = ReadPng(RawData, false);
+            } else {
+                if (Conf.Size.x * Conf.Size.y * (Conf.Encoding.BitDepth / 8) * Conf.Channels != RawData.size()) {
+                    std::cout << "Conf does not match actual image\n";
+                    return { };
+                }
+                res.width = Conf.Size.x;
+                res.height = Conf.Size.y;
+                res.numChannels = Conf.Channels;
+                res.bitDepth = Conf.Encoding.BitDepth;
+                std::swap(res.data, RawData);
+            }
+
+            if (Conf.Encoding.SwapEndian) {
+                htAssert(Conf.Encoding.BitDepth == 16);
+                for (int i = 0; i < res.data.size(); i += 2)
+                    std::swap(res.data[i], res.data[i + 1]);
+            }
+
+            return res;
+    }
+
 
     ImageSamples::SampleException::SampleException()
     : std::runtime_error("Sample overflow, output will be clipped")
